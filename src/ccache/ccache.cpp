@@ -2802,6 +2802,7 @@ cache_compilation(int argc, const char* const* argv)
   tzset(); // Needed for localtime_r.
 
   bool fall_back_to_original_compiler = false;
+  bool run_sycl_link = false;
   util::Args saved_orig_args;
   std::optional<uint32_t> original_umask;
   fs::path saved_temp_dir;
@@ -2876,10 +2877,40 @@ cache_compilation(int argc, const char* const* argv)
       LOG("Executing {}", util::format_argv_for_logging(execv_argv.data()));
       // Execute the original command below after ctx and finalizer have been
       // destructed.
+    } else if (!ctx.args_info.sycl_link_output.empty()) {
+      // SYCL compile+link: compilation was cached, now run the link step.
+      // Build link args from the original command but replace the source file
+      // with the cached object file.
+      util::Args link_args;
+      const auto obj_path = ctx.args_info.output_obj;
+      const auto source_path =
+        util::pstr(ctx.args_info.orig_input_file).str();
+      for (size_t i = 0; i < ctx.orig_args.size(); ++i) {
+        if (ctx.orig_args[i] == source_path) {
+          link_args.push_back(obj_path);
+        } else if (ctx.orig_args[i] == "-o"
+                   && i + 1 < ctx.orig_args.size()) {
+          link_args.push_back("-o");
+          link_args.push_back(ctx.args_info.sycl_link_output);
+          ++i;
+        } else {
+          link_args.push_back(ctx.orig_args[i]);
+        }
+      }
+
+      add_prefix(ctx, link_args, ctx.config.prefix_command());
+
+      LOG("SYCL link step: {}",
+          util::format_argv_for_logging(link_args.to_argv().data()));
+
+      run_sycl_link = true;
+      original_umask = ctx.original_umask;
+      saved_temp_dir = ctx.config.temporary_dir();
+      saved_orig_args = std::move(link_args);
     }
   }
 
-  if (fall_back_to_original_compiler) {
+  if (fall_back_to_original_compiler || run_sycl_link) {
     if (original_umask) {
       util::set_umask(*original_umask);
     }

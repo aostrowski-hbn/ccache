@@ -76,6 +76,7 @@ public:
   std::optional<std::string> found_dc_opt;
   bool found_S_opt = false;
   bool found_analyze_opt = false;
+  bool found_fsycl = false;
   bool found_pch = false;
   bool found_fpch_preprocess = false;
   bool found_Yu = false;
@@ -957,6 +958,12 @@ process_option_arg(const Context& ctx,
     return Statistic::none;
   }
 
+  if (arg == "-fsycl") {
+    state.found_fsycl = true;
+    state.add_common_arg(args[i]);
+    return Statistic::none;
+  }
+
   // -Zs is MSVC's -fsyntax-only equivalent
   if (arg == "-fsyntax-only" || arg == "-Zs") {
     args_info.expect_output_obj = false;
@@ -1599,6 +1606,15 @@ process_args(Context& ctx)
 
   if (is_link) {
     if (args_info.output_is_precompiled_header) {
+      state.add_common_arg("-c");
+    } else if (state.found_fsycl
+               && config.compiler_type() == CompilerType::icx) {
+      // SYCL compile+link: cache the compilation, then link afterwards.
+      LOG("SYCL compile+link detected; splitting into compile and link");
+      args_info.sycl_link_output = args_info.orig_output_obj;
+      args_info.output_obj =
+        util::with_extension(fs::path(args_info.input_file).filename(), ".o");
+      args_info.orig_output_obj = args_info.output_obj;
       state.add_common_arg("-c");
     } else {
       LOG("No -c option found");

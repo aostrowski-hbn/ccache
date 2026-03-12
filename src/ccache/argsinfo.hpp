@@ -181,4 +181,9 @@ struct ArgsInfo
 
   // Thinlto index from -fthinlto-index=
   std::filesystem::path thinlto_index_path;
+
+  // When SYCL compile+link is split, this holds the original link output
+  // target (the executable). If non-empty, a link step must be run after
+  // caching the compilation.
+  std::filesystem::path sycl_link_output;
 };
