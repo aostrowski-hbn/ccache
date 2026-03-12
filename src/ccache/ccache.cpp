@@ -330,10 +330,12 @@ do_guess_compiler(const fs::path& path)
     return CompilerType::nvcc;
   } else if (name == "icl") {
     return CompilerType::icl;
-  } else if (name == "icx") {
-    return CompilerType::icx;
-  } else if (name == "icx-cl") {
+  } else if (name.find("icx-cl") != std::string_view::npos) {
     return CompilerType::icx_cl;
+  } else if (name.find("icx") != std::string_view::npos
+             || name.find("icpx") != std::string_view::npos
+             || name.find("dpcpp") != std::string_view::npos) {
+    return CompilerType::icx;
   } else if (name == "cl") {
     return CompilerType::msvc;
   } else {

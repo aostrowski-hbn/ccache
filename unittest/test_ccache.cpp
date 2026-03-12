@@ -197,6 +197,11 @@ TEST_CASE("guess_compiler")
     CHECK(guess_compiler("/test/prefix/nvcc") == CompilerType::nvcc);
     CHECK(guess_compiler("/test/prefix/nvcc-10.1.243") == CompilerType::nvcc);
 
+    CHECK(guess_compiler("/test/prefix/icx") == CompilerType::icx);
+    CHECK(guess_compiler("/test/prefix/icpx") == CompilerType::icx);
+    CHECK(guess_compiler("/test/prefix/icpx-2025.0") == CompilerType::icx);
+    CHECK(guess_compiler("/test/prefix/dpcpp") == CompilerType::icx);
+
     CHECK(guess_compiler("/test/prefix/x") == CompilerType::other);
     CHECK(guess_compiler("/test/prefix/cc") == CompilerType::other);
     CHECK(guess_compiler("/test/prefix/c++") == CompilerType::other);

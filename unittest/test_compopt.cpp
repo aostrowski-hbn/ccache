@@ -80,6 +80,17 @@ TEST_CASE("compopt_takes_arg")
   CHECK(!compopt_takes_arg("-xxx"));
 }
 
+TEST_CASE("sycl_options")
+{
+  CHECK(compopt_takes_concat_arg("-fsycl-targets="));
+  CHECK(compopt_takes_concat_arg("-fsycl-host-compiler="));
+  CHECK(compopt_takes_concat_arg("-fsycl-host-compiler-options="));
+  CHECK(compopt_takes_concat_arg("-fsycl-device-code-split="));
+  CHECK(compopt_takes_path("-fsycl-host-compiler="));
+  CHECK(!compopt_takes_path("-fsycl-targets="));
+  CHECK(!compopt_too_hard("-fsycl-targets="));
+}
+
 TEST_CASE("prefix_affects_cpp_output")
 {
   CHECK(compopt_prefix_affects_cpp_output("-iframework"));

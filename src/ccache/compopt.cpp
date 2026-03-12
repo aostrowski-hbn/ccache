@@ -135,6 +135,10 @@ const CompOpt compopts[] = {
   {"-fno-working-directory",  AFFECTS_CPP                                            },
   {"-fplugin=libcc1plugin",   TOO_HARD                                               }, // interaction with GDB
   {"-frepo",                  TOO_HARD                                               },
+  {"-fsycl-device-code-split=", TAKES_CONCAT_ARG                                     }, // icpx
+  {"-fsycl-host-compiler-options=", TAKES_CONCAT_ARG                                 }, // icpx
+  {"-fsycl-host-compiler=",  TAKES_CONCAT_ARG | TAKES_PATH                           }, // icpx
+  {"-fsycl-targets=",         TAKES_CONCAT_ARG                                       }, // icpx
   {"-ftime-trace",            TOO_HARD                                               }, // Clang
   {"-fworking-directory",     AFFECTS_CPP                                            },
   {"-gcc-toolchain",          TAKES_ARG | TAKES_PATH                                 }, // Clang

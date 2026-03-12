@@ -7,6 +7,13 @@ Release date: 2026-03-09
 
 === Bug fixes and improvements
 
+- Added support for the `icpx` (Intel C++) and `dpcpp` (Intel SYCL) compiler
+  names, mapping them to the `icx` compiler type.
+
+- Added support for SYCL-specific compiler options: `-fsycl-targets`,
+  `-fsycl-host-compiler`, `-fsycl-host-compiler-options` and
+  `-fsycl-device-code-split`.
+
 - Fixed handling of extensionless input files passed with `-x assembler`
   (regression in 4.13). +
   [small]#_[contributed by Joel Rosdahl]_#

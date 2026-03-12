@@ -676,7 +676,8 @@ _<<Using ccache with other compiler wrappers>>_.
 *icl*::
     Intel compiler on Windows.
 *icx*::
-    Intel LLVM-based compiler.
+    Intel LLVM-based compiler (also known as `icpx` for C++ and `dpcpp` for
+    SYCL). Supports SYCL compilation with `-fsycl`.
 *icx-cl*::
     Intel LLVM-based MSVC-compatible compiler.
 *msvc*::
