@@ -647,6 +647,36 @@ process_preprocessed_file(Context& ctx, Hash& hash, const fs::path& path)
       } catch (const std::filesystem::filesystem_error&) {
         return tl::unexpected(Failure(Statistic::unsupported_source_encoding));
       }
+
+      // ICX SYCL compiler creates temporary wrapper files under
+      // /tmp/icx-<random>/ with random names that change every invocation.
+      // These paths appear in #line directives in the preprocessed output and
+      // would make the hash non-deterministic. Normalize them to a stable
+      // placeholder so the preprocessed hash is reproducible.
+      if (ctx.config.compiler_type() == CompilerType::icx
+          && inc_path.starts_with("/tmp/icx-")) {
+        auto slash = inc_path.find('/', 9); // after "/tmp/icx-"
+        if (slash != std::string::npos) {
+          std::string filename = inc_path.substr(slash + 1);
+          // Strip the random hex suffix from the filename
+          // (e.g. "FakeQuantize-header-74ef1c.h" -> basename only matters
+          // for uniqueness within the same TU, which the stem provides)
+          auto last_dash = filename.rfind('-');
+          auto last_dot = filename.rfind('.');
+          if (last_dash != std::string::npos
+              && last_dot != std::string::npos
+              && last_dash < last_dot) {
+            filename =
+              filename.substr(0, last_dash) + filename.substr(last_dot);
+          }
+          inc_path = "<icx-tmp>/" + filename;
+          inc_fs_path = inc_path;
+        }
+        hash.hash(inc_fs_path);
+        p = q;
+        continue;
+      }
+
       if (!ctx.config.base_dirs().empty()) {
         auto it = relative_inc_path_cache.find(inc_path);
         if (it == relative_inc_path_cache.end()) {

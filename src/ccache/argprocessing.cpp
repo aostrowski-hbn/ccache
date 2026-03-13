@@ -77,6 +77,7 @@ public:
   bool found_S_opt = false;
   bool found_analyze_opt = false;
   bool found_fsycl = false;
+  bool found_fsycl_link = false;
   bool found_pch = false;
   bool found_fpch_preprocess = false;
   bool found_Yu = false;
@@ -964,6 +965,12 @@ process_option_arg(const Context& ctx,
     return Statistic::none;
   }
 
+  if (arg == "-fsycl-link") {
+    state.found_fsycl_link = true;
+    state.add_common_arg(args[i]);
+    return Statistic::none;
+  }
+
   // -Zs is MSVC's -fsyntax-only equivalent
   if (arg == "-fsyntax-only" || arg == "-Zs") {
     args_info.expect_output_obj = false;
@@ -1607,7 +1614,7 @@ process_args(Context& ctx)
   if (is_link) {
     if (args_info.output_is_precompiled_header) {
       state.add_common_arg("-c");
-    } else if (state.found_fsycl
+    } else if (state.found_fsycl && !state.found_fsycl_link
                && config.compiler_type() == CompilerType::icx) {
       // SYCL compile+link: cache the compilation, then link afterwards.
       LOG("SYCL compile+link detected; splitting into compile and link");
@@ -1616,6 +1623,12 @@ process_args(Context& ctx)
         util::with_extension(fs::path(args_info.input_file).filename(), ".o");
       args_info.orig_output_obj = args_info.output_obj;
       state.add_common_arg("-c");
+    } else if (state.found_fsycl_link && state.found_fsycl
+               && config.compiler_type() == CompilerType::icx) {
+      // SYCL device link: -fsycl-link takes .o input containing SPIR-V and
+      // produces a device-linked .o. Cache this as-is without adding -c.
+      LOG("SYCL device link detected; caching device link operation");
+      args_info.actual_language = "ir";
     } else {
       LOG("No -c option found");
       // Having a separate statistic for autoconf tests is useful, as they are

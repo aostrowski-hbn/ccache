@@ -1061,4 +1061,50 @@ TEST_CASE("-Xarch_device with -Xarch_x86_64 is too hard")
   CHECK(result.error() == Statistic::unsupported_compiler_option);
 }
 
+TEST_CASE("SYCL device link with -fsycl-link should be cacheable")
+{
+  TestContext test_context;
+  Context ctx;
+  ctx.config.set_compiler_type(CompilerType::icx);
+  ctx.orig_args =
+    Args::from_string("icx -fsycl -fsycl-link input.o -o output.o");
+  REQUIRE(util::write_file("input.o", "fake object"));
+
+  const auto result = process_args(ctx);
+
+  CHECK(result);
+  CHECK(ctx.args_info.actual_language == "ir");
+}
+
+TEST_CASE("SYCL device link without -fsycl is still called_for_link")
+{
+  TestContext test_context;
+  Context ctx;
+  ctx.config.set_compiler_type(CompilerType::icx);
+  ctx.orig_args =
+    Args::from_string("icx -fsycl-link input.o -o output.o");
+  REQUIRE(util::write_file("input.o", "fake object"));
+
+  const auto result = process_args(ctx);
+
+  REQUIRE(!result);
+  CHECK(result.error() == Statistic::called_for_link);
+}
+
+TEST_CASE("SYCL device link with -fsycl-targets should be cacheable")
+{
+  TestContext test_context;
+  Context ctx;
+  ctx.config.set_compiler_type(CompilerType::icx);
+  ctx.orig_args = Args::from_string(
+    "icx -fsycl -fsycl-link -fsycl-targets=spir64_gen,spir64"
+    " input.o -o output.o");
+  REQUIRE(util::write_file("input.o", "fake object"));
+
+  const auto result = process_args(ctx);
+
+  CHECK(result);
+  CHECK(ctx.args_info.actual_language == "ir");
+}
+
 TEST_SUITE_END();

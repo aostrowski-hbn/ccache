@@ -88,6 +88,37 @@ icpx_tests() {
     expect_stat preprocessed_cache_hit 0
     expect_stat cache_miss 2
     expect_stat files_in_cache 2
+
+    # -------------------------------------------------------------------------
+    TEST "SYCL device link with -fsycl-link should be cacheable"
+
+    # First compile a SYCL source to .o
+    $REAL_ICPX -fsycl -c -o test_sycl.o test_sycl.cpp
+
+    # Run device link through ccache - first time is a miss.
+    $CCACHE $REAL_ICPX -fsycl -fsycl-link test_sycl.o -o test_sycl_dev.o
+    expect_stat cache_miss 1
+    expect_stat files_in_cache 1
+
+    # Same device link again should be a hit.
+    $CCACHE $REAL_ICPX -fsycl -fsycl-link test_sycl.o -o test_sycl_dev.o
+    expect_stat preprocessed_cache_hit 0
+    expect_stat direct_cache_hit 1
+    expect_stat cache_miss 1
+    expect_stat files_in_cache 1
+
+    # -------------------------------------------------------------------------
+    TEST "SYCL device link with different -Xs options should produce different cache entries"
+
+    $REAL_ICPX -fsycl -c -o test_sycl.o test_sycl.cpp
+
+    $CCACHE $REAL_ICPX -fsycl -fsycl-link -fsycl-targets=spir64 test_sycl.o -o test_sycl_dev.o
+    expect_stat cache_miss 1
+    expect_stat files_in_cache 1
+
+    $CCACHE $REAL_ICPX -fsycl -fsycl-link -fsycl-targets=spir64_gen test_sycl.o -o test_sycl_dev.o
+    expect_stat cache_miss 2
+    expect_stat files_in_cache 2
 }
 
 SUITE_icpx_PROBE() {
